@@ -1,29 +1,33 @@
  from __future__ import division,print_function
-%cd keras
+%cd caltech-gpu/keras
 
-import os, json
+import os, sys
+import json
 from glob import glob
 import numpy as np
 np.set_printoptions(precision=4, linewidth=100)
 from matplotlib import pyplot as plt
 from keras.utils.data_utils import get_file
-#import tensorflow as tf
+import tensorflow as tf
 import bcolz
 import time
-#from multi_gpu import make_parallel
+
+sys.path.append(os.getcwd())
+from multi_gpu import make_parallel
 
 from keras import backend as K
 from keras.layers import Flatten, Dense, Input, Conv2D, MaxPooling2D, Dropout, BatchNormalization
 from keras.models import Model
 from keras.preprocessing import image
 import keras
+from keras.utils.np_utils import to_categorical
 from keras.applications.imagenet_utils import _obtain_input_shape
 
-#sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
+sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
 
 # TODO: subtract the mean?
 batch_size = 64
-input_shape = (3, 224, 224)
+input_shape = (224, 224, 3)
 img_input = Input(shape=input_shape)
 # Block 1
 x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1')(img_input)
@@ -72,30 +76,44 @@ model = Model(img_input, last_conv_layer.get_output_at(0), name='vgg16_conv')
 
 # this function simply copies model to multiple gpus and splits up minibatches
 # across the gpus
-model = make_parallel(model, 2)
+num_gpus = 2
+if num_gpus > 1:
+  model = make_parallel(model, num_gpus)
 
-path = './data/256_ObjectCategories/'
+path = '/home/cdsw/caltech-gpu/train_data/256_ObjectCategories/'
 # Do not shuffle the data! You'll lose the label ordering
 generator = image.ImageDataGenerator()
 batches = generator.flow_from_directory(path + 'train', target_size=(224, 224), class_mode='categorical', shuffle=False, batch_size=batch_size)
 val_batches = generator.flow_from_directory(path + 'valid', target_size=(224, 224), class_mode='categorical', shuffle=False, batch_size=batch_size)
 test_batches = generator.flow_from_directory(path + 'test', target_size=(224, 224), class_mode='categorical', shuffle=False, batch_size=batch_size)
+(val_classes, trn_classes, val_labels, trn_labels) = \
+(val_batches.classes, batches.classes, to_categorical(val_batches.classes), to_categorical(batches.classes))
+test_classes, test_labels = test_batches.classes, to_categorical(test_batches.classes)
 
-t0 = time.time()
-conv_feat = model.predict_generator(batches, int(batches.samples / batch_size) + 1)
-conv_val_feat = model.predict_generator(val_batches, int(val_batches.samples / batch_size) + 1)
-conv_test_feat = model.predict_generator(test_batches, int(test_batches.samples / batch_size) + 1)
-t1 = time.time()
-print(t1 - t0)
+def featurize_and_save(phase, batches, labels):
+  t0 = time.time()
+  conv_feat = model.predict_generator(batches, int(batches.samples / batch_size) + 1)
+  c = bcolz.carray(conv_feat, rootdir='./data/conv_%s_feat.dat' % phase)
+  n = c.shape[0]
+  c.flush()
+  c_label = bcolz.carray(labels, rootdir='./data/conv_%s_feat_label.dat' % phase)
+  c_label.flush()
+  t1 = time.time()
+  print("Featurized %d images in %0.1f seconds." % (n, t1 - t0))
 
-c_train = bcolz.carray(conv_feat, rootdir='./keras/data/conv_feat.dat')
-c_train.flush()
-c_val = bcolz.carray(conv_val_feat, rootdir='./keras/data/conv_val_feat.dat')
-c_val.flush()
-c_test = bcolz.carray(conv_test_feat, rootdir='./keras/data/conv_test_feat.dat')
-c_test.flush()
-
-c_train_label = bcolz.carray(trn_labels, rootdir='/home/cdsw/keras/data/conv_feat_label.dat')
-c_train_label.flush()
-c_val_label = bcolz.carray(val_labels, rootdir='/home/cdsw/keras/data/conv_val_feat_label.dat')
-c_val_label.flush()
+featurize_and_save("valid", val_batches, val_labels)
+featurize_and_save("train", batches, trn_labels)
+featurize_and_save("test", test_batches, test_labels)
+#conv_val_feat = model.predict_generator(val_batches, int(val_batches.samples / batch_size) + 1)
+#conv_test_feat = model.predict_generator(test_batches, int(test_batches.samples / batch_size) + 1)
+#print(t1 - t0)
+#
+#
+#c_val = bcolz.carray(conv_val_feat, rootdir='./keras/data/conv_val_feat.dat')
+#c_val.flush()
+#c_test = bcolz.carray(conv_test_feat, rootdir='./keras/data/conv_test_feat.dat')
+#c_test.flush()
+#
+#
+#c_val_label = bcolz.carray(val_labels, rootdir='/home/cdsw/keras/data/conv_val_feat_label.dat')
+#c_val_label.flush()

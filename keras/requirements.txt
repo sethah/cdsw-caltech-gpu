@@ -1,0 +1,5 @@
+tensorflow-gpu
+keras
+bcolz
+h5py
+pillow
