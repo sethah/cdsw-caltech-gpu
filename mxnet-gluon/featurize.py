@@ -1,4 +1,4 @@
-%cd mxnet-gluon
+%cd caltech-gpu/mxnet-gluon
 
 import mxnet as mx
 import os
@@ -25,7 +25,7 @@ def image_transform(data, label, height=224, width=224):
   new_image /= 255.
   return new_image, label
 
-data_dir = "/home/cdsw/train_data/"
+data_dir = "/home/cdsw/caltech-gpu/train_data/"
 phases = ['train', 'test', 'valid']
 datasets = {phase: gluon.data.vision.ImageFolderDataset(data_dir + '256_ObjectCategories/' + phase, flag=1,
                                                transform=image_transform) for phase in phases}
@@ -36,6 +36,7 @@ vgg16_feat = vgg16.features
 vgg16_feat.hybridize()
 
 def featurize(file_name, iterator):
+  t0 = time.time()
   batches = []
   for data, label in iterator:
     datas = gluon.utils.split_and_load(data, devs, even_split=False)
@@ -53,16 +54,11 @@ def featurize(file_name, iterator):
       records.write_idx(k, packed)
       k += 1
   records.close()
+  t1 = time.time()
+  print("Featurized %d images in %0.1f seconds." % (k, t1 - t0))
 
-t0 = time.time()
 featurize('data/train_feat', loaders['train'])
-t1 = time.time()
 featurize('data/valid_feat', loaders['valid'])
-t2 = time.time()
 featurize('data/test_feat', loaders['test'])
-t3 = time.time()
-print("Train featurize step took %0.1f seconds." % (t1 - t0))
-print("Valid featurize step took %0.1f seconds." % (t2 - t1))
-print("Test featurize step took %0.1f seconds." % (t3 - t2))
 
 

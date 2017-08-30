@@ -3,10 +3,7 @@
 
 import os, sys
 import json
-from glob import glob
 import numpy as np
-np.set_printoptions(precision=4, linewidth=100)
-from matplotlib import pyplot as plt
 from keras.utils.data_utils import get_file
 import tensorflow as tf
 import bcolz
@@ -104,16 +101,3 @@ def featurize_and_save(phase, batches, labels):
 featurize_and_save("valid", val_batches, val_labels)
 featurize_and_save("train", batches, trn_labels)
 featurize_and_save("test", test_batches, test_labels)
-#conv_val_feat = model.predict_generator(val_batches, int(val_batches.samples / batch_size) + 1)
-#conv_test_feat = model.predict_generator(test_batches, int(test_batches.samples / batch_size) + 1)
-#print(t1 - t0)
-#
-#
-#c_val = bcolz.carray(conv_val_feat, rootdir='./keras/data/conv_val_feat.dat')
-#c_val.flush()
-#c_test = bcolz.carray(conv_test_feat, rootdir='./keras/data/conv_test_feat.dat')
-#c_test.flush()
-#
-#
-#c_val_label = bcolz.carray(val_labels, rootdir='/home/cdsw/keras/data/conv_val_feat_label.dat')
-#c_val_label.flush()
