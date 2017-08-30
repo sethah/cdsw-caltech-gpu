@@ -1,0 +1,17 @@
+R
+.local
+.julia
+node_modules
+.pip
+.cache
+.config
+core*
+*/RENAME2
+*.dat
+*.pyc
+*.idx
+*.rec
+*.lst
+*.jpg
+*.params
+*.json
