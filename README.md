@@ -7,3 +7,8 @@ here is exactly the same as the exercise described in
 [this blog post](https://blog.cloudera.com/blog/2017/06/deep-learning-on-apache-spark-and-hadoop-with-deeplearning4j/) 
 from the Cloudera Engineering blog.
 
+## Data
+
+The same data is used across all frameworks. Prepare this data initially by 
+executing the code in dataprep.py.
+

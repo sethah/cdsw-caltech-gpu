@@ -55,6 +55,7 @@ class MyScale(object):
             return img.resize(self.size, self.interpolation)
 
 data_dir = "/home/cdsw/caltech-gpu/train_data/256_ObjectCategories/"
+normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 data_transform = transforms.Compose([MyScale(size=[224, 224]), transforms.ToTensor()])
 dsets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transform)
          for x in ['train', 'test', 'valid']}

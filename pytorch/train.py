@@ -1,5 +1,7 @@
 from __future__ import print_function, division
 
+%cd caltech-gpu/pytorch
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -99,6 +101,6 @@ for m in model.parameters():
 model.add_module('predictions', nn.Linear(4096, 257))
 model = model.cuda()
 
-optimizer = torch.optim.Adam(model.predictions.parameters(), lr=0.00001)  # only pass in parameters that will be optimized
+optimizer = torch.optim.Adam(model.predictions.parameters(), lr=0.0001)  # only pass in parameters that will be optimized
 criterion = nn.CrossEntropyLoss()
 best_model = train_model(model, criterion, optimizer, 5)
