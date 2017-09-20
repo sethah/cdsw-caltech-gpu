@@ -30,7 +30,7 @@ class BcolzDataset(torch.utils.data.Dataset):
     def __len__(self):
         return self.features.shape[0]
   
-save_path = 'data/'
+save_path = '/home/cdsw/pytorch/data/'
 dsets = {x: BcolzDataset(bcolz.open(save_path + 'conv_%s_feat.dat' % x), bcolz.open(save_path + 'conv_%s_label.dat' % x))
          for x in ['train', 'valid']}
 batch_size = 32
