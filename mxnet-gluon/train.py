@@ -27,14 +27,13 @@ phases = ['train', 'valid']
 batch_size_per_gpu = 32
 num_gpus = 2
 batch_size = batch_size_per_gpu * num_gpus
-datasets = {phase: BcolzDataset(bcolz.open('/home/cdsw/pytorch/data/conv_%s_feat.dat' % phase), bcolz.open('/home/cdsw/caltech-gpu/pytorch/data/conv_%s_label.dat' % phase)) for phase in phases}
+datasets = {phase: ArrayRecordDataset('data/%s_feat.rec' % phase, (25088)) for phase in phases}
 loaders = {phase: gluon.data.DataLoader(datasets[phase], batch_size=batch_size,
                                         shuffle=(phase == 'train')) for phase in phases}
   
 devs = [mx.gpu(i) for i in range(num_gpus)]
 vgg16 = gluon.model_zoo.vision.vgg16(pretrained=True, ctx=devs)
 vgg16_cls = vgg16.classifier
-vgg16_cls._children[-1] = gluon.nn.Dense(257, prefix="predictions_")
 with vgg16_cls.name_scope():
   vgg16_cls._children.pop()
   vgg16_cls.register_child(gluon.nn.Dense(257, prefix="predictions_"))
