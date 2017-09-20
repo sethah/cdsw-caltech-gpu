@@ -1,4 +1,4 @@
-%cd caltech-gpu/pytorch
+%cd pytorch
 
 from __future__ import print_function, division
 

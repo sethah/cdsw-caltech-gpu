@@ -1,4 +1,4 @@
-%cd caltech-gpu/mxnet-gluon
+%cd mxnet-gluon
 
 import mxnet as mx
 import os
@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 import mxnet.gluon as gluon
-import bcolz
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -24,24 +23,11 @@ class ArrayRecordDataset(gluon.data.dataset.RecordFileDataset):
         arr = np.frombuffer(_bytes, dtype=np.float32).reshape(self.data_shape)
         return arr, header.label
       
-class BcolzDataset(gluon.data.dataset.Dataset):
-
-    def __init__(self, features, labels):
-        self.features = features
-        self.labels = labels
-
-    def __getitem__(self, index):
-        return mx.nd.array(self.features[index].ravel()), int(self.labels[index])
-
-    def __len__(self):
-        return self.features.shape[0]
-      
 phases = ['train', 'valid']
 batch_size_per_gpu = 32
 num_gpus = 2
 batch_size = batch_size_per_gpu * num_gpus
-#datasets = {phase: ArrayRecordDataset('data/%s_feat.rec' % phase, (25088)) for phase in phases}
-datasets = {phase: BcolzDataset(bcolz.open('/home/cdsw/caltech-gpu/pytorch/data/conv_%s_feat.dat' % phase), bcolz.open('/home/cdsw/caltech-gpu/pytorch/data/conv_%s_label.dat' % phase)) for phase in phases}
+datasets = {phase: BcolzDataset(bcolz.open('/home/cdsw/pytorch/data/conv_%s_feat.dat' % phase), bcolz.open('/home/cdsw/caltech-gpu/pytorch/data/conv_%s_label.dat' % phase)) for phase in phases}
 loaders = {phase: gluon.data.DataLoader(datasets[phase], batch_size=batch_size,
                                         shuffle=(phase == 'train')) for phase in phases}
   

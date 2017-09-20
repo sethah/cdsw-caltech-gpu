@@ -1,4 +1,4 @@
-%cd caltech-gpu/mxnet-gluon
+%cd mxnet-gluon
 
 import mxnet as mx
 import os
@@ -15,7 +15,7 @@ warnings.filterwarnings('ignore')
 
 num_classes = 257
 batch_per_gpu = 32
-num_gpus = 2
+num_gpus = 1
 batch_size = batch_per_gpu * num_gpus
 devs = [mx.gpu(i) for i in range(num_gpus)]
 
@@ -27,7 +27,7 @@ def image_transform(data, label, height=224, width=224):
   new_image = mx.nd.transpose(mx.img.imresize(data, height, width), (2, 0, 1)).astype(np.float32)
   return (new_image - vgg_mean) / 255., label
 
-data_dir = "/home/cdsw/caltech-gpu/train_data/"
+data_dir = "/home/cdsw/train_data/"
 phases = ['train', 'test', 'valid']
 datasets = {phase: gluon.data.vision.ImageFolderDataset(data_dir + '256_ObjectCategories/' + phase, flag=1,
                                                transform=image_transform) for phase in phases}

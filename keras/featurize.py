@@ -1,6 +1,6 @@
- from __future__ import division,print_function
-%cd caltech-gpu/keras
+%cd keras
 
+from __future__ import division,print_function
 import os, sys
 import json
 import numpy as np
@@ -22,7 +22,6 @@ from keras.applications.imagenet_utils import _obtain_input_shape
 
 sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
 
-# TODO: subtract the mean?
 batch_size = 64
 input_shape = (224, 224, 3)
 img_input = Input(shape=input_shape)
@@ -77,7 +76,7 @@ num_gpus = 2
 if num_gpus > 1:
   model = make_parallel(model, num_gpus)
 
-path = '/home/cdsw/caltech-gpu/train_data/256_ObjectCategories/'
+path = '/home/cdsw/train_data/256_ObjectCategories/'
 # Do not shuffle the data! You'll lose the label ordering
 generator = image.ImageDataGenerator()
 batches = generator.flow_from_directory(path + 'train', target_size=(224, 224), class_mode='categorical', shuffle=False, batch_size=batch_size)

@@ -1,7 +1,6 @@
+%cd pytorch
+
 from __future__ import print_function, division
-
-%cd caltech-gpu/pytorch
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
