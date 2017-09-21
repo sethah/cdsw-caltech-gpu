@@ -11,26 +11,35 @@ import cv2
 from urllib.request import urlopen
 import warnings
 warnings.filterwarnings('ignore')
+from im2rec import read_list
+
+data_dir = "/home/cdsw/train_data/"
+
+def get_iterator(batch_size, path, data_shape=(3, 224, 224)):
+  iterator = mx.io.ImageRecordIter(
+        path_imgrec         = path,
+        data_name           = 'data',
+        label_name          = 'label',
+        batch_size          = batch_size,
+        data_shape          = data_shape,
+        shuffle             = False,
+        rand_crop           = False,
+        rand_mirror         = False,
+        mean_r              = 123.68,
+        mean_g              = 116.779,
+        mean_b              = 103.939,
+        scale               = 1 / 255.)
+  return iterator
+
 
 num_classes = 257
 batch_per_gpu = 32
-num_gpus = 1
+num_gpus = 2
 batch_size = batch_per_gpu * num_gpus
 devs = [mx.gpu(i) for i in range(num_gpus)]
-
-vgg_mean = mx.nd.array([123.68, 116.779, 103.939], dtype=np.float32).reshape((3,1,1))
-def image_transform(data, label, height=224, width=224):
-  '''
-  Convert image to channels first
-  '''
-  new_image = mx.nd.transpose(mx.img.imresize(data, height, width), (2, 0, 1)).astype(np.float32)
-  return (new_image - vgg_mean) / 255., label
-
-data_dir = "/home/cdsw/train_data/"
-phases = ['train', 'test', 'valid']
-datasets = {phase: gluon.data.vision.ImageFolderDataset(data_dir + '256_ObjectCategories/' + phase, flag=1,
-                                               transform=image_transform) for phase in phases}
-loaders = {phase: gluon.data.DataLoader(datasets[phase], batch_size=batch_size, shuffle=False) for phase in phases}
+phases = ['train', 'valid', 'test']
+path_names = ['/home/cdsw/mxnet-gluon/data/caltech-%s.rec' % phase for phase in phases]
+iterators = {phase: get_iterator(batch_size, path) for phase, path in zip(phases, path_names)}
 
 vgg16 = gluon.model_zoo.vision.vgg16(pretrained=True, ctx=devs)
 vgg16_feat = vgg16.features
@@ -45,10 +54,10 @@ def featurize(file_name, iterator):
   t0 = time.time()
   batches = []
   k = 0
-  for data, label in iterator:
+  for batch in iterator:
     # split minibatch across multiple GPUs
-    datas = gluon.utils.split_and_load(data, devs, even_split=False)
-    labels = gluon.utils.split_and_load(label, devs, even_split=False)
+    datas = gluon.utils.split_and_load(batch.data[0], devs, even_split=False)
+    labels = gluon.utils.split_and_load(batch.label[0], devs, even_split=False)
     featurized = [(label, vgg16_feat.forward(data)) for label, data in zip(labels, datas)]
     for lbl, out in featurized:
       ln, dn = lbl.asnumpy(), out.reshape((lbl.shape[0], -1)).asnumpy()
@@ -61,8 +70,8 @@ def featurize(file_name, iterator):
    
   print("Featurized %d images in %0.1f seconds." % (k, time.time() - t0))
 
-featurize('data/train_feat', loaders['train'])
-featurize('data/valid_feat', loaders['valid'])
-featurize('data/test_feat', loaders['test'])
+featurize('data/valid_feat', iterators['valid'])
+featurize('data/train_feat', iterators['train'])
+featurize('data/test_feat', iterators['test'])
 
 

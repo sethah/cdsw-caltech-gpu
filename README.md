@@ -14,6 +14,9 @@ executing the code in [dataprep.py](dataprep.py).
 
 ## Featurize images
 
+**For mxnet-gluon**: Also execute the code in `mxnet-gluon/dataprep.py` to
+put images into the MXNet binary format RecordIO.
+
 For any particular framework, run the code in the `featurize.py` file, but be
 sure to change the number of GPUs used depending on your setup.
 
