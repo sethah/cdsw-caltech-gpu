@@ -7,7 +7,6 @@ import time
 import numpy as np
 from PIL import Image
 import mxnet.gluon as gluon
-#from mxnet.ndarray._internal import _cvimresize as imresize
 import cv2
 from urllib.request import urlopen
 import warnings
@@ -38,11 +37,16 @@ vgg16_feat = vgg16.features
 vgg16_feat.hybridize()
 
 def featurize(file_name, iterator):
+  '''
+  Pass images through the features part of the VGG network, then save them as 
+  bytes in a RecordIO file.
+  '''
   records = mx.recordio.MXIndexedRecordIO(file_name + '.idx', file_name + '.rec', 'w')
   t0 = time.time()
   batches = []
   k = 0
   for data, label in iterator:
+    # split minibatch across multiple GPUs
     datas = gluon.utils.split_and_load(data, devs, even_split=False)
     labels = gluon.utils.split_and_load(label, devs, even_split=False)
     featurized = [(label, vgg16_feat.forward(data)) for label, data in zip(labels, datas)]

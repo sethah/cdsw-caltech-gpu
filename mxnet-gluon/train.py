@@ -13,6 +13,10 @@ import warnings
 warnings.filterwarnings('ignore')
 
 class ArrayRecordDataset(gluon.data.dataset.RecordFileDataset):
+    '''
+    A simple dataset that loades records from an IndexedRecordIO file
+    and converts them into a numpy array.
+    '''
     def __init__(self, filename, array_shape):
         super(ArrayRecordDataset, self).__init__(filename)
         self.data_shape = array_shape
@@ -38,6 +42,7 @@ with vgg16_cls.name_scope():
   vgg16_cls._children.pop()
   vgg16_cls.register_child(gluon.nn.Dense(257, prefix="predictions_"))
   
+# get a parameter dict of the frozen and non-frozen parameters
 trainable_params = gluon.parameter.ParameterDict()
 fixed_params = gluon.parameter.ParameterDict()
 for layer in vgg16_cls._children:
@@ -45,7 +50,7 @@ for layer in vgg16_cls._children:
     trainable_params.update(layer.collect_params())
   else:
     fixed_params.update(layer.collect_params())
-fixed_params.setattr('grad_req', 'null')
+fixed_params.setattr('grad_req', 'null')  # do not do the backward pass on these params
 
 loss_function = gluon.loss.SoftmaxCrossEntropyLoss()
   
@@ -83,7 +88,6 @@ def run(num_gpus, lr, num_epochs):
 
     trainer = gluon.Trainer(trainable_params, 'adam', {'learning_rate': lr})
     for epoch in range(num_epochs):
-        # train
         start = time.time()
         num_samples = 0
         for data, label in train_data:
