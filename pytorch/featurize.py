@@ -54,15 +54,16 @@ class MyScale(object):
         else:
             return img.resize(self.size, self.interpolation)
 
-data_dir = "/home/cdsw/caltech-gpu/train_data/256_ObjectCategories/"
+data_dir = "/home/cdsw/train_data/256_ObjectCategories/"
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 data_transform = transforms.Compose([MyScale(size=[224, 224]), transforms.ToTensor()])
 dsets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transform)
          for x in ['train', 'test', 'valid']}
 batch_size = 32
-dset_loaders = {x: torch.utils.data.DataLoader(dsets[x], batch_size=batch_size, shuffle=False, num_workers=1)
+dset_loaders = {x: torch.utils.data.DataLoader(dsets[x], batch_size=batch_size, shuffle=False, num_workers=4)
                 for x in ['train', 'test', 'valid']}
 dset_classes = dsets['train'].classes
+next(iter(dset_loaders['valid']))
 
 class VGGFeaturize(nn.Module):
     def __init__(self):
